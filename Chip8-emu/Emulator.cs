@@ -14,19 +14,27 @@ namespace Chip8_emu
         private int PC = 512;
         private int SP = 0;
         private int I;
-        private byte X;
-        private byte Y;
         private byte[] VN = new byte[16];
         private int[] STACK = new int[32];
         private bool[] keys = new bool[16];
+        private byte delaytimer = 0;
+        private byte soundtimer = 0;
+       
         public void SetKey(byte keycode, bool value)
         {
             keys[keycode] = value;
         }
         public void Tick()
         {
-           
-           // System.Diagnostics.Debug.WriteLine(getOpCode()+"|PC:"+ PC.ToString("X4") + "|I:" + I + "|v0:" + VN[0] + "|v1:" + VN[1] + "|v2:" + VN[2] + "|v3:" + VN[3] + "|v4:" + VN[4]);
+            if (soundtimer > 0)
+            {
+                soundtimer--;
+            }
+            if (delaytimer > 0)
+            {
+                delaytimer--;
+            }
+            // System.Diagnostics.Debug.WriteLine(getOpCode()+"|PC:"+ PC.ToString("X4") + "|I:" + I + "|v0:" + VN[0] + "|v1:" + VN[1] + "|v2:" + VN[2] + "|v3:" + VN[3] + "|v4:" + VN[4]);
 
             byte high = memory[PC];
             byte low = memory[PC+1];
@@ -184,12 +192,56 @@ namespace Chip8_emu
                     
                     break;
                 case 0xF:
-                    if (low == 0x1E) //FX1E MEM I += Vx Adds VX to I. VF is not affected
+                    switch (low)
                     {
-                        I = I + VN[o2];
-                        break;
+                        case 0x07:
+                            VN[o2] = delaytimer;
+                            break;
+                        case 0x0A:
+                            for (int i = 0; i < keys.Length; i++)
+                            {
+                                if (keys[i])
+                                {
+                                    VN[o2] = (byte)i;
+                                    PC += 2;
+                                }
+                            }
+                            return;
+                        case 0x15:
+                            delaytimer = VN[o2];
+                            break;
+                        case 0x18:
+                            soundtimer = VN[o2];
+                            break;
+                        case 0x1E:
+                            I += VN[o2];
+                            break;
+                        case 0x29:
+                            I = VN[o2] * 5;
+                            break;
+                        case 0x33:
+                            memory[I] = (byte)((VN[o2] % 1000) / 100); // hundred's digit
+                            memory[I + 1] = (byte)((VN[o2] % 100) / 10);   // ten's digit
+                            memory[I + 2] = (byte)(VN[o2] % 10);         // one's digit
+                            break;
+                        case 0x55:
+                            for (int i = 0; i <= o2; i++)
+                            {
+                                memory[I + i] = VN[i];
+                            }
+                            I += o2 + 1;
+                            break;
+                        case 0x65:
+                            for (int i = 0; i <= o2; i++)
+                            {
+                                VN[i] = memory[I + i];
+                            }
+                            I += o2 + 1;
+                            break;
+                        default:
+                            break;
                     }
-                    System.Diagnostics.Debug.WriteLine("0xF");
+                    
                     break;
                 default:
                     break;
@@ -242,7 +294,7 @@ namespace Chip8_emu
         }
         public void LoadRom(string path)
         {
-            string pathSource = @"C:\Development\Random.ch8";
+            string pathSource = @"C:\Development\Particle.ch8";
 
             try
             {
