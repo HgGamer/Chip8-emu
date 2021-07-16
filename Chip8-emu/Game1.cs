@@ -100,7 +100,7 @@ namespace Chip8_emu
                 
             }
             // TODO: Add your update logic here
-            for (int i = 0; i < 16; i++)
+            for (int i = 0; i < 5; i++)
             {
                 emulator.Tick();
                 framebuffer = emulator.framebuffer;

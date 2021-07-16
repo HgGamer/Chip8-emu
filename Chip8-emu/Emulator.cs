@@ -273,10 +273,10 @@ namespace Chip8_emu
 
                     // if drawing to the screen would cause any pixel to be erased,
                     // set the collision flag to 1
-                    //if (bit && pixelp)
-                    //{
-                    //     VN[0xF] = 1;
-                    //}
+                    if (bit && pixelp)
+                    {
+                         VN[0xF] = 1;
+                    }
 
                     // draw this pixel by XOR
                    
@@ -294,7 +294,7 @@ namespace Chip8_emu
         }
         public void LoadRom(string path)
         {
-            string pathSource = @"C:\Development\Particle.ch8";
+            string pathSource = @"C:\Development\TETRIS";
 
             try
             {
