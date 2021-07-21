@@ -2,15 +2,71 @@
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
+using System.Timers;
+using System.IO;
+
 namespace Chip8_emu
 {
     public class Game1 : Game
     {
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
-        private Emulator emulator = new Emulator();
+        private Emulator emulator;
         private bool[] framebuffer = new bool[64 * 32];
-        private bool spacepressed = false;
+        private int cpuspeed = 500;
+        private Timer cputimer;
+        public void StartTimer()
+        {
+            Timer t = new Timer(1000 / 60);
+            t.AutoReset = true;
+            t.Elapsed += new ElapsedEventHandler(OnTimedEvent);
+            t.Start();
+        }
+        public void CPUTimer()
+        {
+            cputimer = new Timer(1000 / cpuspeed);
+            cputimer.AutoReset = true;
+            cputimer.Elapsed += new ElapsedEventHandler(OnTimedCPUEvent);
+            cputimer.Start();
+        }
+        private void LoadGame()
+        {
+          
+            using (var fbd = new System.Windows.Forms.OpenFileDialog())
+            {
+                System.Windows.Forms.DialogResult result = fbd.ShowDialog();
+
+                if (result == System.Windows.Forms.DialogResult.OK)
+                {
+                    string file = fbd.FileName;
+                    emulator = null;
+                    if (cputimer != null)
+                    {
+                        cputimer.Stop();
+                    }
+                  
+                    emulator = new Emulator();
+                    emulator.LoadRom(file);
+                    CPUTimer();
+                }
+            }
+        }
+        private async void OnTimedCPUEvent(System.Object source, ElapsedEventArgs e)
+        {
+            if (emulator != null)
+            {
+                emulator.Tick();
+            }
+
+        }
+        private async void OnTimedEvent(System.Object source, ElapsedEventArgs e)
+        {
+            if (emulator != null)
+            {
+                 emulator.TickTimers(); 
+            }
+           
+        }
         private void DrawFramebuffer()
         {
             GraphicsDevice.SamplerStates[0] = SamplerState.PointClamp;
@@ -37,6 +93,7 @@ namespace Chip8_emu
             _graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
+            StartTimer();
             
         }
 
@@ -45,16 +102,14 @@ namespace Chip8_emu
             // TODO: Add your initialization logic here
 
             base.Initialize();
-
-            framebuffer[12] = true;
+            
 
         }
 
         protected override void LoadContent()
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
-            emulator.LoadRom("");
-           
+         
             // TODO: use this.Content to load your game content here
         }
 
@@ -63,7 +118,14 @@ namespace Chip8_emu
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
 
-
+            if (Keyboard.GetState().IsKeyDown(Keys.L))
+            {
+                LoadGame();
+            }
+            if (emulator == null)
+            {
+                return;
+            }
             emulator.SetKey(0x01, Keyboard.GetState().IsKeyDown(Keys.D1));
             emulator.SetKey(0x02, Keyboard.GetState().IsKeyDown(Keys.D2));
             emulator.SetKey(0x03, Keyboard.GetState().IsKeyDown(Keys.D3));
@@ -84,27 +146,9 @@ namespace Chip8_emu
             emulator.SetKey(0x0B, Keyboard.GetState().IsKeyDown(Keys.C));
             emulator.SetKey(0x0F, Keyboard.GetState().IsKeyDown(Keys.V));
 
-            if (Keyboard.GetState().IsKeyUp(Keys.Space) && spacepressed)
-            {
-                spacepressed = false;
-                for(int i = 0; i < 5; i++)
-                {
-                    emulator.Tick();
-                    framebuffer = emulator.framebuffer;
-                }
-                
-            }
-            if (Keyboard.GetState().IsKeyDown(Keys.Space))
-            {
-                spacepressed = true;
-                
-            }
-            // TODO: Add your update logic here
-            for (int i = 0; i < 5; i++)
-            {
-                emulator.Tick();
-                framebuffer = emulator.framebuffer;
-            }
+         
+            
+            framebuffer = emulator.framebuffer;
             base.Update(gameTime);
         }
 

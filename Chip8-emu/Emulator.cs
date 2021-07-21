@@ -24,7 +24,7 @@ namespace Chip8_emu
         {
             keys[keycode] = value;
         }
-        public void Tick()
+        public void TickTimers()
         {
             if (soundtimer > 0)
             {
@@ -34,6 +34,10 @@ namespace Chip8_emu
             {
                 delaytimer--;
             }
+        }
+        public void Tick()
+        {
+           
             // System.Diagnostics.Debug.WriteLine(getOpCode()+"|PC:"+ PC.ToString("X4") + "|I:" + I + "|v0:" + VN[0] + "|v1:" + VN[1] + "|v2:" + VN[2] + "|v3:" + VN[3] + "|v4:" + VN[4]);
 
             byte high = memory[PC];
@@ -294,12 +298,12 @@ namespace Chip8_emu
         }
         public void LoadRom(string path)
         {
-            string pathSource = @"C:\Development\TETRIS";
 
+            System.Diagnostics.Debug.WriteLine(path);
             try
             {
 
-                using (FileStream fsSource = new FileStream(pathSource,
+                using (FileStream fsSource = new FileStream(path,
                     FileMode.Open, FileAccess.Read))
                 {
 
